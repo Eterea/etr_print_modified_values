@@ -1,6 +1,6 @@
 To automatically add a child Comment with non default values in Adobe Substance 3D Designer
 
-print_modified_values - v.0.3 - THIS IS A WIP
+PRINT MODIFIED VALUES - v.0.3 - THIS IS A WIP
 
 To automatically add a child Comment with non default values in Adobe Substance 3D Designer
 
