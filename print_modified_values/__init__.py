@@ -22,6 +22,7 @@ from collections import OrderedDict
 from sd.tools import io
 from sd.tools import graphlayout
 from sd.api import sdmodule
+from sd.api import sdproperty
 
 from sd.ui.graphgrid import *
 from sd.api.sbs.sdsbscompgraph import *
@@ -207,7 +208,12 @@ class PrintModValuesToolBar(QtWidgets.QToolBar):
                             value1 = value.split(',')[1]
                             value2 = value.split(',')[2]
                             value3 = value.split(',')[3]
-                            value = str(round(float(value0), roundN)), str(round(float(value1), roundN)), str(round(float(value2), roundN)), str(round(float(value3), roundN))
+
+                            # Special case for 'Dual Nodes' (ie LEVELS) to choose only the first float if it's acting as Grayscale
+                            if modifNodeLabel in dualNodes and modifNodeDepth == 'gray':
+                                value = str(round(float(value0), roundN))
+                            else:
+                                value = str(round(float(value0), roundN)), str(round(float(value1), roundN)), str(round(float(value2), roundN)), str(round(float(value3), roundN))
 
                         elif 'SDValueColorRGBA(ColorRGBA(' in value:
                             value = value.replace('SDValueColorRGBA(ColorRGBA(','').replace('))','')
@@ -289,6 +295,28 @@ class PrintModValuesToolBar(QtWidgets.QToolBar):
         # Get nice label (the top title in the node)
         modifNodeLabel = modifNode.getDefinition().getLabel() # Name in node
 
+        # ------------------------------------------------------------------------------------------------------------
+        # Discern if node is acting as Grayscale or Color. At least necessary for LEVELS, maybe with others
+        output_node = None
+        output_prop = None
+        modifNodeDepth = None
+        dualNodes = ['Levels']
+
+        if modifNodeLabel in dualNodes:
+            for prop in modifNode.getProperties(sdproperty.SDPropertyCategory.Input):
+                if prop.isConnectable():
+                    for conn in modifNode.getPropertyConnections(prop):
+                        output_prop = conn.getInputProperty()
+                        output_node = conn.getInputPropertyNode()
+
+            output_node_bpp = output_node.getPropertyValue(output_prop).get().getBytesPerPixel()
+
+            if output_node_bpp > 2:
+                modifNodeDepth = 'color'
+            else:
+                modifNodeDepth = 'gray'
+
+        # ------------------------------------------------------------------------------------------------------------
         # Get Ordered Dictionary for Modified Node
         modifNode_dict = getNodePropValues(modifNode, modifNodeLabel)
 
