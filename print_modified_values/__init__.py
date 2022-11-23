@@ -23,6 +23,8 @@ from sd.tools import io
 from sd.tools import graphlayout
 from sd.api import sdmodule
 from sd.api import sdproperty
+from sd.api import sdtypeenum
+
 
 from sd.ui.graphgrid import *
 from sd.api.sbs.sdsbscompgraph import *
@@ -156,25 +158,13 @@ class PrintModValuesToolBar(QtWidgets.QToolBar):
                             value = re.sub('\D', '', value) # Remove all except digits
                             value = int(value)
 
-                            valueTypeId = valueType.getId()
-
                             enums = valueType.getEnumerators()
-                            enum_values = [x.getLabel() for x in enums]
                             enum_dict = {}
-                            for index in range(len(enum_values)):
-                                enum_dict[index] = enum_values[index]
 
-                            if propLabel == 'Pattern': # Some Enumerators start with 1 instead 0. This is to fix that
-                                value = enum_dict[value -1]
+                            for enum in enums:
+                                enum_dict[enum.getDefaultValue().get()] = enum.getId()
 
-                            elif propLabel == 'Blending Mode' and modifNodeLabel != 'Blend': # Others are messed 0,1,3 or 0,2,3...
-                                value = value
-
-                            else:
-                                try:
-                                    value = enum_dict[value]
-                                except:
-                                    value = value
+                            value = enum_dict[value].title() # Some results are lower case. Best feedback in Uppercase
 
                         elif 'SDValueArray(SDValueStruct(' in value:
                             value = 'GRAPH'
@@ -235,22 +225,14 @@ class PrintModValuesToolBar(QtWidgets.QToolBar):
                         else:
                             value = 'UNKNOW'
 
-                        # Special cases to give a better readability
-                        if propLabel == 'Rotation':
-                            propLabel = 'Rot-Turns'
+                        # Special cases to give a better/short readability
+                        if propLabel in betterLabelDict:
+                            propLabel = betterLabelDict[propLabel]
 
-                        elif propLabel == 'Angle':
-                            propLabel = 'Angle-Turns'
+                        if value in betterValueDict:
+                            value = betterValueDict[value]
 
-                        elif propLabel == 'Output Color':
-                            propLabel = 'RGBA'
-
-                        elif value == 'true':
-                            value = 'TRUE'
-
-                        elif value == 'false':
-                            value = 'FALSE'
-
+                        
                         # -------- END DIRTY CLEANER ----------------------------------------------------------------
                         #
                         # ///////////////////////////////////////////////////////////////////////////////////////////
@@ -287,6 +269,33 @@ class PrintModValuesToolBar(QtWidgets.QToolBar):
         # If more than 1 node selected gives alert
         if size != 1:
             print('Select 1 and only 1 node')
+
+        # Dictionaries for special cases to give a better/short readability both in Labels and Values
+        betterLabelDict = {
+            'Rotation' : 'Rot-Turns',
+            'Angle' : 'Rot-Turns',
+            'Output Color' : 'RGBA',
+            'Blending Mode' : 'Blend',
+            'Vector Map Displacement' : 'Vector Map Displ',
+            'Vector Map Multiplier' : 'Vector Map Multip',
+            'Mask Map Threshold' : 'Mask Map Thres',
+            'Luminance By Number' : 'Lumi by Number',
+            'Luminance By Scale' : 'Lumi by Scale',
+            'Luminance Random' : 'Lumi Random',
+            'Luminance by Ring Number' : 'Lumi by Ring Number',
+            'Luminance by Pattern Number' : 'Lumi by Patt Number',
+            'Color Parametrization Multiplier' : 'Color Param Multip',
+            'Cropping Area' : 'Crop',
+            'Transform matrix' : 'Matrix',
+            'Interstice X/Y' : 'Inters X/Y',
+            'Pattern Input Number' : 'Patt Input Numb'
+        }
+
+        betterValueDict = {
+            'true' : 'TRUE',
+            'false' : 'FALSE',
+            'Image Input' : 'Img Input'
+        }
 
         # ------------------------------------------------------------------------------------------------------------
         # Get first (and supposedly unique) node
