@@ -6,7 +6,7 @@
 # Created by Cristobal Vila - etereaestudios.com - November 2022
 # Special thanks to Luca Giarrizo, 'est', Nicolas Wirrmann, Divyansh from the Substance Discord
 #
-# For more info about how to install an curiosities about development:
+# For more info about how to install and curiosities about development:
 # https://etereaestudios.com/2022/11/13/print-modified-values-plugin-for-designer/
 
 
