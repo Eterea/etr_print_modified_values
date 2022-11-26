@@ -276,6 +276,8 @@ class PrintModValuesToolBar(QtWidgets.QToolBar):
             'Angle' : 'Rot-Turns',
             'Output Color' : 'RGBA',
             'Blending Mode' : 'Blend',
+            'Tiling Mode' : 'Tiling',
+            'Edge Roundness' : 'Edge Round',
             'Vector Map Displacement' : 'Vector Map Displ',
             'Vector Map Multiplier' : 'Vector Map Multip',
             'Mask Map Threshold' : 'Mask Map Thres',
@@ -285,7 +287,17 @@ class PrintModValuesToolBar(QtWidgets.QToolBar):
             'Luminance by Ring Number' : 'Lumi by Ring Number',
             'Luminance by Pattern Number' : 'Lumi by Patt Number',
             'Color Parametrization Multiplier' : 'Color Param Multip',
+            'Alpha Channel Content' : 'Alpha Chan Cont',
             'Cropping Area' : 'Crop',
+            'Gradient Orientation' : 'Grad Orient',
+            'Gradient RGBA' : 'Grad RGBA',
+            'Spline Rotation Random' : 'Spline Rot Rand',
+            'Warp Angle Input Multiplier' : 'Warp Ang Inp Multi',
+            'Spline Distortion Random' : 'Spline Distr Rand',
+            'Spline Distortion Frequency' : 'Spline Distr Freq',
+            'Spline Width Random' : 'Spline Width Rand',
+            'Rotation Random' : 'Rot Rand',
+            'Scale Random' : 'Scale Rand',
             'Transform matrix' : 'Matrix',
             'Interstice X/Y' : 'Inters X/Y',
             'Pattern Input Number' : 'Patt Input Numb'
@@ -294,6 +306,9 @@ class PrintModValuesToolBar(QtWidgets.QToolBar):
         betterValueDict = {
             'true' : 'TRUE',
             'false' : 'FALSE',
+            'No_Tiling' : 'NO',
+            'Horizontal_Tiling' : 'HORIZ',
+            'Vertical_Tiling' : 'VERT',
             'Image Input' : 'Img Input'
         }
 
