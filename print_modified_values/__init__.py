@@ -1,6 +1,6 @@
 # python
 #
-# print_modified_values - v.1.0
+# etr_print_modified_values - v.1.0
 # To automatically add a child Comment with non default values in Adobe Substance 3D Designer
 #
 # Created by Cristobal Vila - etereaestudios.com - November 2022
@@ -231,7 +231,6 @@ class PrintModValuesToolBar(QtWidgets.QToolBar):
 
                         if value in betterValueDict:
                             value = betterValueDict[value]
-
                         
                         # -------- END DIRTY CLEANER ----------------------------------------------------------------
                         #
@@ -270,7 +269,8 @@ class PrintModValuesToolBar(QtWidgets.QToolBar):
         if size != 1:
             print('Select 1 and only 1 node')
 
-        # Dictionaries for special cases to give a better/short readability both in Labels and Values
+        # ------------------------------------------------------------------------------------------------------------
+        # Dictionary for special cases to give a better/short readability in Labels
         betterLabelDict = {
             'Rotation' : 'Rot-Turns',
             'Angle' : 'Rot-Turns',
@@ -287,6 +287,7 @@ class PrintModValuesToolBar(QtWidgets.QToolBar):
             'Luminance by Ring Number' : 'Lumi by Ring Number',
             'Luminance by Pattern Number' : 'Lumi by Patt Number',
             'Color Parametrization Multiplier' : 'Color Param Multip',
+            'Color Parametrization Mode' : 'Color Param Mode',
             'Alpha Channel Content' : 'Alpha Chan Cont',
             'Cropping Area' : 'Crop',
             'Gradient Orientation' : 'Grad Orient',
@@ -303,6 +304,7 @@ class PrintModValuesToolBar(QtWidgets.QToolBar):
             'Pattern Input Number' : 'Patt Input Numb'
         }
 
+        # Dictionary for special cases to give a better/short readability in Values
         betterValueDict = {
             'true' : 'TRUE',
             'false' : 'FALSE',
@@ -312,15 +314,28 @@ class PrintModValuesToolBar(QtWidgets.QToolBar):
             'Image Input' : 'Img Input'
         }
 
-        # ------------------------------------------------------------------------------------------------------------
-        # Get first (and supposedly unique) node
-        modifNode = selection.getItem(0)
+        # Supported Atomic Nodes (better to list Supported than Unsupported bacause user can create custom Labels for some nodes)
+        supportAtomic = ['Blend', 'Blur', 'Channels Shuffle', 'Curve', 'Directional Blur', 'Directional Warp', 
+        'Distance', 'Emboss', 'Gradient (Dynamic)', 'Gradient Map', 'Grayscale Conversion', 'HSL', 'Levels', 
+        'Normal', 'Sharpen', 'Text', 'Transformation 2D', 'Uniform Color', 'Warp']
 
-        # Get nice label (the top title in the node)
-        modifNodeLabel = modifNode.getDefinition().getLabel() # Name in node
+        # Unsupported Instances. For the moment, Atomic Nodes that really appear as Instances when using 'modifNode.getReferencedResource()'
+        unsupportInstances = ['SVG', 'Bitmap', 'FX-Map']
+
 
         # ------------------------------------------------------------------------------------------------------------
-        # Discern if node is acting as Grayscale or Color. At least necessary for LEVELS, maybe with others
+        # Get first (and supposedly unique) node and also the nice label (the top title in the node)
+
+        try:
+            modifNode = selection.getItem(0) 
+            modifNodeLabel = modifNode.getDefinition().getLabel()
+
+        except:
+            modifNode_dict = {'Non': 'Supported'}
+
+
+        # ------------------------------------------------------------------------------------------------------------
+        # Discern if node is acting as Grayscale or Color. At least necessary for LEVELS, maybe also with others
         output_node = None
         output_prop = None
         modifNodeDepth = None
@@ -333,7 +348,10 @@ class PrintModValuesToolBar(QtWidgets.QToolBar):
                         output_prop = conn.getInputProperty()
                         output_node = conn.getInputPropertyNode()
 
-            output_node_bpp = output_node.getPropertyValue(output_prop).get().getBytesPerPixel()
+            try:
+                output_node_bpp = output_node.getPropertyValue(output_prop).get().getBytesPerPixel()
+            except:
+                modifNodeDepth = 'gray'
 
             if output_node_bpp > 2:
                 modifNodeDepth = 'color'
@@ -341,8 +359,12 @@ class PrintModValuesToolBar(QtWidgets.QToolBar):
                 modifNodeDepth = 'gray'
 
         # ------------------------------------------------------------------------------------------------------------
-        # Get Ordered Dictionary for Modified Node
-        modifNode_dict = getNodePropValues(modifNode, modifNodeLabel)
+        # Get Ordered Dictionary for Modified Node using our function
+        try:
+            modifNode_dict = getNodePropValues(modifNode, modifNodeLabel)
+
+        except:
+            modifNode_dict = {'Non': 'Supported'}
 
         # Identify if node is Atomic or Instance, and also 'Referenced Graph' & 'From Package' if Instance
         modifNode_refRsc = modifNode.getReferencedResource()
@@ -351,39 +373,50 @@ class PrintModValuesToolBar(QtWidgets.QToolBar):
         # Load and Identify procedure for INSTANCE NODES
         if modifNode_refRsc:
 
-            # Get the Package and Graph Instance info (the one you see at top of Attributes)
-            referGraph = modifNode_refRsc.getIdentifier()
-            fromPack = modifNode_refRsc.getPackage().getFilePath().split("/")[-1]
+            if modifNodeLabel not in unsupportInstances:
 
-            # Convoluted procedure to load an Instance Node, same as selected, to be used as Reference
-            resource_dir = app.getPath(SDApplicationPath.DefaultResourcesDir)
-            file_path = os.path.join(resource_dir, 'packages', '%s' % fromPack)
-            package = pkMgr.loadUserPackage(file_path)
-            resource = package.findResourceFromUrl('%s' % referGraph)
-            referNode = graph.newInstanceNode(resource)
-            pkMgr.unloadUserPackage(package) # This is necessary, because Package also loads in Explorer
+                # Get the Pack File Path and Graph Instance info (the one you see at top of Attributes)
+                pack_file_path = modifNode_refRsc.getPackage().getFilePath()
+                graph_instance = modifNode_refRsc.getIdentifier()
 
-            # Get Ordered Dictionary for Reference Instance Node
-            referNode_dict = getNodePropValues(referNode, modifNodeLabel)
+                # Convoluted procedure to load an Instance Node, same as selected, to be used as Reference
+                package = pkMgr.loadUserPackage(pack_file_path)
+                resource = package.findResourceFromUrl('%s' % graph_instance)
 
-            graph.deleteNode(referNode) # Delete that Reference Node, once we got the needed info (already in our dict)
+                if resource:
+                    referNode = graph.newInstanceNode(resource)
+                    pkMgr.unloadUserPackage(package) # This is necessary, to Unload, because Package also loads in Explorer
+
+                    # Get Ordered Dictionary for Reference Instance Node
+                    referNode_dict = getNodePropValues(referNode, modifNodeLabel)
+
+                    graph.deleteNode(referNode) # Delete that Reference Node, once we got the needed info (already in our dict)
+
+                else:
+                    pkMgr.unloadUserPackage(package) # This is necessary, to Unload, because Package also loads in Explorer
+                    modifNode_dict = {'Non': 'Supported'}
+            else:
+                modifNode_dict = {'Non': 'Supported'}
 
         # ------------------------------------------------------------------------------------------------------------
         # Load and Identify procedure for ATOMIC NODES
         else:
-            atomic_nodes_module = modMgr.getModuleFromId("sbs::compositing")
+            if modifNodeLabel in supportAtomic:
 
-            label_identifier_dict = {} # Create a dictionary on the fly to identify 'nice' labels with internal names
+                atomic_nodes_module = modMgr.getModuleFromId("sbs::compositing")
+                label_identifier_dict = {} # Create a dictionary on the fly to identify 'nice' labels with internal names
 
-            for item in atomic_nodes_module.getDefinitions():
-                label_identifier_dict[item.getLabel()] = item.getId()
+                for item in atomic_nodes_module.getDefinitions():
+                    label_identifier_dict[item.getLabel()] = item.getId()
 
-            referNode = graph.newNode(label_identifier_dict["%s" % modifNodeLabel])
+                referNode = graph.newNode(label_identifier_dict["%s" % modifNodeLabel])
+                referNodeLabel = referNode.getDefinition().getLabel() # Get nice label (the top title in the node)
+                referNode_dict = getNodePropValues(referNode, referNodeLabel) # Get Ordered Dictionary for Reference Atomic Node
+                graph.deleteNode(referNode) # Delete that Reference Node, once we got the needed info (already in our dict)
 
-            # Get Ordered Dictionary for Reference Atomic Node
-            referNode_dict = getNodePropValues(referNode, modifNodeLabel)
-
-            graph.deleteNode(referNode) # Delete that Reference Node, once we got the needed info (already in our dict)
+            # For those non supported Atomic Nodes
+            else:
+                modifNode_dict = {'Non': 'Supported'}
 
         # ------------------------------------------------------------------------------------------------------------
         # Differences between dictionaries
@@ -395,16 +428,18 @@ class PrintModValuesToolBar(QtWidgets.QToolBar):
                     different_dict.update({key: value})
 
         # ------------------------------------------------------------------------------------------------------------
-        # For when both nodes are identical I prefer to create a Comment to clarify (it's a 'non modified node')
+        # For when both nodes are identical I prefer to create a Comment to clarify
         if len(different_dict) == 0:
-            different_dict = {
-                'All by': 'default'
-            }
+            different_dict = {'All by': 'default'}
 
-        differ_list = list(different_dict.items()) # Convert Ordered Dictionary to list
+        # ------------------------------------------------------------------------------------------------------------
+        # Super-special case for a 'Normal-OUTPUT-Node' to differenciate from a 'Normal-Node' (both share same Nice Label)
+        if 'Mipmaps' in different_dict:
+            different_dict = {'Non': 'Supported'}
 
         # ------------------------------------------------------------------------------------------------------------
         # Clean the resulting list for simpler and better readability, breaking lines and removing some characters
+        differ_list = list(different_dict.items()) # Convert Ordered Dictionary to list
         differ_str = '\n'.join(map(str, differ_list)) # To convert to various lines
         differ_str = differ_str.replace("(","").replace(")","").replace("'","").replace(", "," ") # Cleaning characters
 
