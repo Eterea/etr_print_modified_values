@@ -99,7 +99,7 @@ class PrintModValuesToolBar(QtWidgets.QToolBar):
         # ----------- DEFINE SOME VARIABLES, DICTIONARIES AND LISTS -------------------------------------------------
         # 
 
-        roundN = 2 # Overall round value for floats. Change this to 3 or 4 for extra accuracy
+        roundN = 4 # Overall round value for floats. Change this to 3 or 4 for extra accuracy
 
         # Define Ordered Dictionaries for MODIFIED & REFERENCE nodes and also for DIFFERENCES
         modifNode_dict = OrderedDict()
@@ -512,3 +512,4 @@ def uninitializeSDPlugin():
         global graphViewCreatedCallbackID
         uiMgr.unregisterCallback(graphViewCreatedCallbackID)
         PrintModValuesToolBar.removeAllToolbars()
+
